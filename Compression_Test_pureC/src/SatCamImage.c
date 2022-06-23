@@ -477,6 +477,33 @@ static const unsigned short acChromiCodeTable[162][2] = {
     {10, 0b1111111010}
 };
 
+/* A typedef of the ZigZag to make a LUT*/
+typedef struct zigCoor{
+    int x;
+    int y;
+}zigCoor;
+
+/*
+    lookUpTableForZigZag
+ */
+zigCoor lookUpTableForZigZag[64] = {
+{0,0}, 
+{1,0},{0,1},
+{0,2},{1,1},{2,0},
+{3,0},{2,1},{1,2},{0,3},
+{0,4},{1,3},{2,2},{3,1},{4,0},
+{5,0},{4,1},{3,2},{2,3},{1,4},{0,5},
+{0,6},{1,5},{2,4},{3,3},{4,2},{5,1},{6,0},
+{7,0},{6,1},{5,2},{4,3},{3,4},{2,5},{1,6},{0,7},
+{1,7},{2,6},{3,5},{4,4},{5,3},{6,2},{7,1},
+{7,2},{6,3},{5,4},{4,5},{3,6},{2,7},
+{3,7},{4,6},{5,5},{6,4},{7,3},
+{7,4},{6,5},{5,6},{4,7},
+{5,7},{6,6},{7,5},
+{7,6},{6,7},
+{7,7}};
+
+
 
 /*
  * Function: BuildJFIFHeader
@@ -1332,11 +1359,12 @@ int HuffmanEncode(enum RESMODE resMode) {
         for(int xBlock = 0; xBlock < xRes/8; xBlock++) {
             /*---------------------------------------------------------------*/
             // Y
-            for(int y = 0; y < 8; y++) {
-                for(int x = 0; x < 8; x++) {
-                    // Index edited with block*8 to be able to go through whole image
-                    int xIndex = x + (xBlock * 8);
-                    int yIndex = y + (yBlock * 8);
+
+            for(int i = 0; i < 64 ; i++){
+                
+                // Index edited with block*8 to be able to go through whole image
+                int xIndex = lookUpTableForZigZag[i].x + (xBlock * 8);
+                int yIndex = lookUpTableForZigZag[i].y + (yBlock * 8);    
 
                     // Find category by comparing value with category boundaries
                     cat = -1;
@@ -1352,7 +1380,7 @@ int HuffmanEncode(enum RESMODE resMode) {
                     if(cat == -1) return -1; // Sanity check, exits if problem arises
                     
                     // If value to encode is a DC value, do this
-                    if(x == 0 && y == 0) {
+                    if(i == 0) {
                         // Add the base code
                         if(AddToBitString(dcLumiCodeTable[cat][0], dcLumiCodeTable[cat][1], 0) != 0) {
                             return -1;
@@ -1417,7 +1445,7 @@ int HuffmanEncode(enum RESMODE resMode) {
                             zeroCtr = 0;
                         }
                     }
-                }
+                
             }
 
             // Add EOB code if the last value was not a non-zero value
